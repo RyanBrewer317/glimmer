@@ -6,7 +6,7 @@ description = "A concurrency library for Gleam!"
 # your project to the Hex package manager.
 #
 licences = ["GPL-3.0-or-later"]
-repository = { type = "github", user = "RyanBrew317", repo = "glimmer" }
+repository = { type = "github", user = "RyanBrewer317", repo = "glimmer" }
 # links = [{ title = "Website", href = "https://gleam.run" }]
 
 [dependencies]
