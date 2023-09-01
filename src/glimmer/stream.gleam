@@ -262,3 +262,30 @@ pub fn generator(g: fn(fn(b) -> Nil, fn() -> Nil) -> Nil) -> Stream(b) {
   g(fn(b) { write(output, b) }, fn() { close(output) })
   output
 }
+
+/// Consume a stream and produce two streams with the same elements.
+/// This can be useful since reading from streams consumes them.
+/// For example:
+/// ```gleam
+/// [1, 2, 3]
+/// |> from_list()
+/// |> duplicate()
+/// |> fn(#(s1, s2)) {
+///   io.debug(reduce(s1, 0, fn(a, b) {a + b}))
+///   collect(s2)
+/// }
+/// |> io.debug()
+/// ```
+/// In this example, the sum is printed as well as the list itself.
+pub fn duplicate(s: Stream(a)) -> #(Stream(a), Stream(a)) {
+  let out1 = new()
+  let out2 = new()
+  dream.spawn(fn() {
+    use <- with(out1)
+    use <- with(out2)
+    use a <- each(s)
+    write(out1, a)
+    write(out2, a)
+  })
+  #(out1, out2)
+}
