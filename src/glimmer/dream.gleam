@@ -13,75 +13,78 @@ import gleam/dynamic.{Dynamic}
 
 /// The type of dreams that return values.
 pub opaque type Dream(a) {
-    Dream(task.Task(a))
+  Dream(task.Task(a))
 }
 
 /// The errors dreams may produce, 
 /// checkable with `try_await` and `try_await_with_timeout`.
 pub type DreamError {
-    ExitError(reason: Dynamic)
-    TimeoutError
+  ExitError(reason: Dynamic)
+  TimeoutError
 }
 
 /// Spawn a dream that won't return a value.
 /// (It simply does work and side-effects.)
 /// If the dream crashes then the owning process
 /// also crashes.
-pub fn spawn(foo: fn()->Nil) -> Nil {
-    process.start(linked: True, running: foo)
-    Nil
+pub fn spawn(foo: fn() -> Nil) -> Nil {
+  process.start(linked: True, running: foo)
+  Nil
 }
 
 /// Spawn a dream that won't return a value.
 /// (It simply does work and side-effects.)
 /// If the dream crashes then the owning process
 /// *doesn't* crash. The crash is completely silent.
-pub fn spawn_unlinked(foo: fn()->Nil) -> Nil {
-    process.start(linked: False, running: foo)
-    Nil
+pub fn spawn_unlinked(foo: fn() -> Nil) -> Nil {
+  process.start(linked: False, running: foo)
+  Nil
 }
 
 /// Spawn a dream that returns a value.
 /// The value is retrieved with one of the `await` functions.
 /// If the dream crashes then the owning process
 /// also crashes, 
-pub fn async(foo: fn()->a) -> Dream(a) {
-    Dream(task.async(foo))
+pub fn async(foo: fn() -> a) -> Dream(a) {
+  Dream(task.async(foo))
 }
 
 /// Get the value of a dream, waiting until it's done working,
 /// the time is up, or it crashes. Returns a value that lets you
 /// distinguish between these three cases.
-pub fn try_await_with_timeout(dream: Dream(a), timeout: Int) -> Result(a, DreamError) {
-    let Dream(task) = dream
-    case task.try_await(task, timeout) {
-        Ok(a) -> Ok(a)
-        Error(task.Timeout) -> Error(TimeoutError)
-        Error(task.Exit(reason)) -> Error(ExitError(reason))
-    }
+pub fn try_await_with_timeout(
+  dream: Dream(a),
+  timeout: Int,
+) -> Result(a, DreamError) {
+  let Dream(task) = dream
+  case task.try_await(task, timeout) {
+    Ok(a) -> Ok(a)
+    Error(task.Timeout) -> Error(TimeoutError)
+    Error(task.Exit(reason)) -> Error(ExitError(reason))
+  }
 }
 
 /// A version of `try_await_with_timeout` that waits indefinitely,
 /// instead of until a timeout runs out.
 pub fn try_await(dream: Dream(a)) -> Result(a, DreamError) {
-    let Dream(task) = dream
-    case task.try_await_forever(task) {
-        Ok(a) -> Ok(a)
-        Error(task.Timeout) -> Error(TimeoutError)
-        Error(task.Exit(reason)) -> Error(ExitError(reason))
-    }
+  let Dream(task) = dream
+  case task.try_await_forever(task) {
+    Ok(a) -> Ok(a)
+    Error(task.Timeout) -> Error(TimeoutError)
+    Error(task.Exit(reason)) -> Error(ExitError(reason))
+  }
 }
 
 /// A version of `try_await_with_timeout` that assumes there wasn't an error,
 /// crashing if there was.
 pub fn await_with_timeout(dream: Dream(a), timeout: Int) -> a {
-    let assert Ok(a) = try_await_with_timeout(dream, timeout)
-    a
+  let assert Ok(a) = try_await_with_timeout(dream, timeout)
+  a
 }
 
 /// A version of `try_await` that assumes there wasn't an error,
 /// crashing if there was. If a timeout is needed see `await_with_timeout`.
 pub fn await(dream: Dream(a)) -> a {
-    let assert Ok(a) = try_await(dream)
-    a
+  let assert Ok(a) = try_await(dream)
+  a
 }
